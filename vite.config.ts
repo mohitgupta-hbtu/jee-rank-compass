@@ -12,6 +12,9 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  preview: {
+    allowedHosts: ["rankedge.onrender.com"],
+  },
   plugins: [react()].filter(Boolean),
   resolve: {
     alias: {
