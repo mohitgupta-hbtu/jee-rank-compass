@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { Lock, BarChart3, BookOpen, MessageCircle, Crown } from "lucide-react";
+import { useState } from "react";
+import PaymentModal from "./PaymentModal";
 
 const features = [
   { icon: BarChart3, title: "Detailed College Probability", desc: "Get admission chances for every IIT, NIT, IIIT with branch-wise breakdown." },
@@ -9,7 +11,10 @@ const features = [
 ];
 
 const PremiumSection = () => {
+  const [paymentOpen, setPaymentOpen] = useState(false);
   return (
+    <>
+    <PaymentModal isOpen={paymentOpen} onClose={() => setPaymentOpen(false)} />
     <section id="premium" className="py-20 relative">
       <div className="absolute inset-0 mesh-gradient opacity-30" />
       <div className="container mx-auto px-4 relative z-10">
@@ -48,13 +53,16 @@ const PremiumSection = () => {
         </div>
 
         <div className="text-center">
-          <button className="gradient-btn-accent px-8 py-4 rounded-xl text-accent-foreground font-semibold text-lg">
-            Upgrade to Premium — ₹199/month
+          <button
+            onClick={() => setPaymentOpen(true)}
+            className="gradient-btn-accent px-8 py-4 rounded-xl text-accent-foreground font-semibold text-lg hover:scale-105 transition-transform"
+          >
+            Upgrade to Premium — ₹49
           </button>
-          <p className="text-xs text-muted-foreground mt-3">Cancel anytime · 7-day free trial</p>
         </div>
       </div>
     </section>
+    </>
   );
 };
 

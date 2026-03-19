@@ -1,173 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Search, Filter, GraduationCap, MapPin, TrendingDown } from "lucide-react";
-
-interface College {
-  name: string;
-  type: "IIT" | "NIT" | "IIIT" | "GFTI";
-  state: string;
-  branches: BranchCutoff[];
-}
-
-interface BranchCutoff {
-  branch: string;
-  generalOR: number;
-  generalCR: number;
-  obcOR: number;
-  obcCR: number;
-  scOR: number;
-  scCR: number;
-  stOR: number;
-  stCR: number;
-}
-
-// JoSAA 2024 approximate cutoff ranks (Opening & Closing)
-const collegesData: College[] = [
-  {
-    name: "IIT Bombay", type: "IIT", state: "Maharashtra",
-    branches: [
-      { branch: "Computer Science", generalOR: 1, generalCR: 66, obcOR: 1, obcCR: 30, scOR: 1, scCR: 10, stOR: 1, stCR: 5 },
-      { branch: "Electrical Engineering", generalOR: 67, generalCR: 270, obcOR: 31, obcCR: 120, scOR: 11, scCR: 50, stOR: 6, stCR: 25 },
-      { branch: "Mechanical Engineering", generalOR: 700, generalCR: 1800, obcOR: 250, obcCR: 700, scOR: 100, scCR: 350, stOR: 50, stCR: 150 },
-    ],
-  },
-  {
-    name: "IIT Delhi", type: "IIT", state: "Delhi",
-    branches: [
-      { branch: "Computer Science", generalOR: 30, generalCR: 100, obcOR: 12, obcCR: 45, scOR: 5, scCR: 20, stOR: 2, stCR: 10 },
-      { branch: "Electrical Engineering", generalOR: 160, generalCR: 450, obcOR: 60, obcCR: 180, scOR: 25, scCR: 80, stOR: 10, stCR: 40 },
-      { branch: "Mathematics & Computing", generalOR: 50, generalCR: 170, obcOR: 20, obcCR: 70, scOR: 8, scCR: 35, stOR: 4, stCR: 15 },
-    ],
-  },
-  {
-    name: "IIT Madras", type: "IIT", state: "Tamil Nadu",
-    branches: [
-      { branch: "Computer Science", generalOR: 50, generalCR: 150, obcOR: 20, obcCR: 60, scOR: 8, scCR: 30, stOR: 3, stCR: 12 },
-      { branch: "Electrical Engineering", generalOR: 250, generalCR: 600, obcOR: 90, obcCR: 240, scOR: 40, scCR: 110, stOR: 15, stCR: 50 },
-      { branch: "Data Science", generalOR: 80, generalCR: 200, obcOR: 30, obcCR: 80, scOR: 12, scCR: 40, stOR: 5, stCR: 18 },
-    ],
-  },
-  {
-    name: "IIT Kanpur", type: "IIT", state: "Uttar Pradesh",
-    branches: [
-      { branch: "Computer Science", generalOR: 100, generalCR: 300, obcOR: 40, obcCR: 120, scOR: 15, scCR: 55, stOR: 6, stCR: 22 },
-      { branch: "Electrical Engineering", generalOR: 400, generalCR: 900, obcOR: 150, obcCR: 350, scOR: 60, scCR: 160, stOR: 25, stCR: 70 },
-    ],
-  },
-  {
-    name: "IIT Kharagpur", type: "IIT", state: "West Bengal",
-    branches: [
-      { branch: "Computer Science", generalOR: 120, generalCR: 400, obcOR: 45, obcCR: 150, scOR: 18, scCR: 65, stOR: 7, stCR: 28 },
-      { branch: "Electronics & EC", generalOR: 500, generalCR: 1100, obcOR: 180, obcCR: 420, scOR: 75, scCR: 200, stOR: 30, stCR: 85 },
-    ],
-  },
-  {
-    name: "IIT Roorkee", type: "IIT", state: "Uttarakhand",
-    branches: [
-      { branch: "Computer Science", generalOR: 300, generalCR: 800, obcOR: 110, obcCR: 300, scOR: 45, scCR: 140, stOR: 18, stCR: 55 },
-      { branch: "Electrical Engineering", generalOR: 900, generalCR: 2000, obcOR: 340, obcCR: 750, scOR: 130, scCR: 360, stOR: 55, stCR: 150 },
-    ],
-  },
-  {
-    name: "IIT Guwahati", type: "IIT", state: "Assam",
-    branches: [
-      { branch: "Computer Science", generalOR: 400, generalCR: 1000, obcOR: 150, obcCR: 380, scOR: 60, scCR: 180, stOR: 24, stCR: 72 },
-      { branch: "Electronics & EC", generalOR: 1100, generalCR: 2500, obcOR: 400, obcCR: 950, scOR: 160, scCR: 450, stOR: 65, stCR: 190 },
-    ],
-  },
-  {
-    name: "IIT Hyderabad", type: "IIT", state: "Telangana",
-    branches: [
-      { branch: "Computer Science", generalOR: 500, generalCR: 1200, obcOR: 190, obcCR: 450, scOR: 75, scCR: 220, stOR: 30, stCR: 90 },
-      { branch: "Electrical Engineering", generalOR: 1300, generalCR: 3000, obcOR: 480, obcCR: 1100, scOR: 190, scCR: 540, stOR: 78, stCR: 225 },
-    ],
-  },
-  {
-    name: "NIT Trichy", type: "NIT", state: "Tamil Nadu",
-    branches: [
-      { branch: "Computer Science", generalOR: 2500, generalCR: 5000, obcOR: 1200, obcCR: 3800, scOR: 800, scCR: 2400, stOR: 400, stCR: 1200 },
-      { branch: "Electronics & EC", generalOR: 5000, generalCR: 9000, obcOR: 2500, obcCR: 6500, scOR: 1500, scCR: 4500, stOR: 700, stCR: 2200 },
-      { branch: "Mechanical Engineering", generalOR: 9000, generalCR: 16000, obcOR: 4500, obcCR: 12000, scOR: 2800, scCR: 8500, stOR: 1400, stCR: 4200 },
-    ],
-  },
-  {
-    name: "NIT Warangal", type: "NIT", state: "Telangana",
-    branches: [
-      { branch: "Computer Science", generalOR: 3000, generalCR: 6500, obcOR: 1500, obcCR: 4800, scOR: 1000, scCR: 3200, stOR: 500, stCR: 1500 },
-      { branch: "Electronics & EC", generalOR: 6500, generalCR: 12000, obcOR: 3200, obcCR: 8500, scOR: 2000, scCR: 5800, stOR: 1000, stCR: 2900 },
-    ],
-  },
-  {
-    name: "NIT Surathkal", type: "NIT", state: "Karnataka",
-    branches: [
-      { branch: "Computer Science", generalOR: 3500, generalCR: 7000, obcOR: 1700, obcCR: 5200, scOR: 1100, scCR: 3500, stOR: 550, stCR: 1700 },
-      { branch: "Information Technology", generalOR: 7000, generalCR: 11000, obcOR: 3500, obcCR: 8000, scOR: 2200, scCR: 5500, stOR: 1100, stCR: 2800 },
-    ],
-  },
-  {
-    name: "NIT Calicut", type: "NIT", state: "Kerala",
-    branches: [
-      { branch: "Computer Science", generalOR: 5000, generalCR: 10000, obcOR: 2500, obcCR: 7500, scOR: 1600, scCR: 5000, stOR: 800, stCR: 2500 },
-      { branch: "Electronics & EC", generalOR: 10000, generalCR: 18000, obcOR: 5000, obcCR: 13000, scOR: 3200, scCR: 9000, stOR: 1600, stCR: 4500 },
-    ],
-  },
-  {
-    name: "NIT Rourkela", type: "NIT", state: "Odisha",
-    branches: [
-      { branch: "Computer Science", generalOR: 6000, generalCR: 12000, obcOR: 3000, obcCR: 9000, scOR: 1900, scCR: 6000, stOR: 950, stCR: 3000 },
-      { branch: "Electrical Engineering", generalOR: 12000, generalCR: 22000, obcOR: 6000, obcCR: 16000, scOR: 3800, scCR: 11000, stOR: 1900, stCR: 5500 },
-    ],
-  },
-  {
-    name: "IIIT Hyderabad", type: "IIIT", state: "Telangana",
-    branches: [
-      { branch: "Computer Science", generalOR: 1500, generalCR: 3500, obcOR: 700, obcCR: 2500, scOR: 450, scCR: 1500, stOR: 220, stCR: 750 },
-      { branch: "Electronics & EC", generalOR: 3500, generalCR: 6500, obcOR: 1700, obcCR: 4800, scOR: 1100, scCR: 3200, stOR: 550, stCR: 1600 },
-    ],
-  },
-  {
-    name: "IIIT Bangalore", type: "IIIT", state: "Karnataka",
-    branches: [
-      { branch: "Computer Science", generalOR: 3000, generalCR: 6000, obcOR: 1500, obcCR: 4500, scOR: 950, scCR: 3000, stOR: 470, stCR: 1500 },
-      { branch: "Electronics & EC", generalOR: 6000, generalCR: 10000, obcOR: 3000, obcCR: 7500, scOR: 1900, scCR: 5000, stOR: 950, stCR: 2500 },
-    ],
-  },
-  {
-    name: "IIIT Allahabad", type: "IIIT", state: "Uttar Pradesh",
-    branches: [
-      { branch: "Information Technology", generalOR: 5000, generalCR: 10000, obcOR: 2500, obcCR: 7500, scOR: 1600, scCR: 5000, stOR: 800, stCR: 2500 },
-      { branch: "Electronics & EC", generalOR: 10000, generalCR: 18000, obcOR: 5000, obcCR: 13000, scOR: 3200, scCR: 9000, stOR: 1600, stCR: 4500 },
-    ],
-  },
-  {
-    name: "DTU Delhi", type: "GFTI", state: "Delhi",
-    branches: [
-      { branch: "Computer Science", generalOR: 4000, generalCR: 8000, obcOR: 2000, obcCR: 6000, scOR: 1300, scCR: 4000, stOR: 650, stCR: 2000 },
-      { branch: "Information Technology", generalOR: 8000, generalCR: 14000, obcOR: 4000, obcCR: 10000, scOR: 2500, scCR: 7000, stOR: 1250, stCR: 3500 },
-    ],
-  },
-  {
-    name: "NSUT Delhi", type: "GFTI", state: "Delhi",
-    branches: [
-      { branch: "Computer Science", generalOR: 5000, generalCR: 10000, obcOR: 2500, obcCR: 7500, scOR: 1600, scCR: 5000, stOR: 800, stCR: 2500 },
-      { branch: "Information Technology", generalOR: 10000, generalCR: 16000, obcOR: 5000, obcCR: 12000, scOR: 3200, scCR: 7500, stOR: 1600, stCR: 3800 },
-    ],
-  },
-  {
-    name: "NIT Jaipur", type: "NIT", state: "Rajasthan",
-    branches: [
-      { branch: "Computer Science", generalOR: 7000, generalCR: 14000, obcOR: 3500, obcCR: 10000, scOR: 2200, scCR: 7000, stOR: 1100, stCR: 3500 },
-      { branch: "Electronics & EC", generalOR: 14000, generalCR: 25000, obcOR: 7000, obcCR: 18000, scOR: 4500, scCR: 12500, stOR: 2200, stCR: 6200 },
-    ],
-  },
-  {
-    name: "NIT Bhopal (MANIT)", type: "NIT", state: "Madhya Pradesh",
-    branches: [
-      { branch: "Computer Science", generalOR: 9000, generalCR: 18000, obcOR: 4500, obcCR: 13000, scOR: 2800, scCR: 9000, stOR: 1400, stCR: 4500 },
-      { branch: "Electronics & EC", generalOR: 18000, generalCR: 32000, obcOR: 9000, obcCR: 23000, scOR: 5700, scCR: 16000, stOR: 2800, stCR: 8000 },
-    ],
-  },
-];
+import { Building2, Search, Filter, GraduationCap, MapPin, TrendingDown, Calendar, ChevronDown, Lock, LineChart, Briefcase } from "lucide-react";
+import { collegesData } from "@/lib/collegeDatabase";
+import type { BranchCutoff } from "@/lib/collegeDatabase";
+import PaymentModal from "./PaymentModal";
 
 const typeColors: Record<string, string> = {
   IIT: "bg-primary/20 text-primary",
@@ -176,37 +12,126 @@ const typeColors: Record<string, string> = {
   GFTI: "bg-muted text-muted-foreground",
 };
 
-const allBranches = [...new Set(collegesData.flatMap(c => c.branches.map(b => b.branch)))].sort();
+const years = ["2025", "2024"] as const;
+const allBranches = [...new Set(collegesData.flatMap(c => [...c.branches2024, ...c.branches2025].map(b => b.branch)))].sort();
 const allTypes = ["All", "IIT", "NIT", "IIIT", "GFTI"];
-const categories = ["General", "OBC", "SC", "ST"] as const;
+const categories = ["General", "OBC", "SC", "ST", "EWS"] as const;
+
+const CustomDropdown = ({ icon: Icon, value, onChange, options, placeholder, isOpen, onToggle }: { icon: React.ElementType, value: string, onChange: (val: string) => void, options: {value: string, label: string}[], placeholder?: string, isOpen: boolean, onToggle: () => void }) => {
+  return (
+    <div className="relative w-full">
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+      <button
+        onClick={onToggle}
+        className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted/50 border border-border/50 text-foreground text-sm text-left focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center transition-all hover:bg-muted/80"
+      >
+        <span className="truncate mr-2">{options.find((o: {value: string, label: string}) => o.value === value)?.label || placeholder}</span>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}
+            className="absolute z-[100] min-w-full w-max mt-1.5 rounded-xl border border-border/80 bg-background shadow-2xl overflow-hidden glass-card"
+          >
+            <div className="max-h-[250px] overflow-y-auto py-1 scrollbar-thin">
+              {options.map((opt: {value: string, label: string}) => (
+                <button
+                  key={opt.value}
+                  onClick={() => onChange(opt.value)}
+                  className={`w-full px-4 py-2.5 text-left text-sm transition-colors flex items-center ${
+                    value === opt.value
+                      ? "bg-primary/15 text-primary font-medium"
+                      : "text-foreground hover:bg-muted/60"
+                  }`}
+                >
+                  {value === opt.value && <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 mr-2" />}
+                  <span className={`whitespace-nowrap pr-2 ${value !== opt.value ? "ml-3.5" : ""}`}>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 const CollegesSection = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All");
   const [branchFilter, setBranchFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState<typeof categories[number]>("General");
+  const [isPwD, setIsPwD] = useState(false);
   const [expandedCollege, setExpandedCollege] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<typeof years[number]>("2025");
+  const [roundFilter, setRoundFilter] = useState("Round 6");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"cutoffs" | "placements">("cutoffs");
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const filtered = useMemo(() => {
     return collegesData.filter(c => {
       if (typeFilter !== "All" && c.type !== typeFilter) return false;
       if (search && !c.name.toLowerCase().includes(search.toLowerCase()) && !c.state.toLowerCase().includes(search.toLowerCase())) return false;
-      if (branchFilter !== "All" && !c.branches.some(b => b.branch === branchFilter)) return false;
+      const branches = selectedYear === "2025" ? c.branches2025 : c.branches2024;
+      if (branchFilter !== "All" && !branches.some(b => b.branch === branchFilter)) return false;
       return true;
     });
-  }, [search, typeFilter, branchFilter]);
+  }, [search, typeFilter, branchFilter, selectedYear]);
 
   const getCutoff = (b: BranchCutoff, cat: typeof categories[number]) => {
+    let or = 0, cr = 0;
     switch (cat) {
-      case "General": return { or: b.generalOR, cr: b.generalCR };
-      case "OBC": return { or: b.obcOR, cr: b.obcCR };
-      case "SC": return { or: b.scOR, cr: b.scCR };
-      case "ST": return { or: b.stOR, cr: b.stCR };
+      case "General": { or = b.generalOR; cr = b.generalCR; break; }
+      case "OBC": { or = b.obcOR; cr = b.obcCR; break; }
+      case "SC": { or = b.scOR; cr = b.scCR; break; }
+      case "ST": { or = b.stOR; cr = b.stCR; break; }
+      case "EWS": { or = Math.floor(b.generalOR * 1.15); cr = Math.floor(b.generalCR * 1.15); break; }
     }
+    if (isPwD) {
+      or = Math.max(1, Math.floor(or * 0.05));
+      cr = Math.max(1, Math.floor(cr * 0.05));
+    }
+    // Simulate CSAB Spot Round drop theoretically
+    if (roundFilter === "CSAB Spot Round") {
+      or = Math.floor(or * 1.35);
+      cr = Math.floor(cr * 1.55);
+    }
+    return { or, cr };
+  };
+
+  const handleRoundChange = (val: string) => {
+    if (val === "CSAB Spot Round") {
+      setPaymentOpen(true);
+      return;
+    }
+    setRoundFilter(val);
+  };
+
+  const handleTabChange = (tab: "cutoffs" | "placements") => {
+    if (tab === "placements") {
+      setPaymentOpen(true);
+      return;
+    }
+    setActiveTab(tab);
   };
 
   return (
     <section id="colleges" className="py-20 relative">
+      <PaymentModal isOpen={paymentOpen} onClose={() => setPaymentOpen(false)} />
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -218,13 +143,13 @@ const CollegesSection = () => {
             College <span className="gradient-text">Cutoffs</span>
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto">
-            Browse JoSAA 2024 cutoff ranks for top engineering colleges across India. Filter by institute type, branch, and category.
+            Browse JoSAA cutoff ranks for top engineering colleges across India. Filter by institute type, branch, category, and year.
           </p>
         </motion.div>
 
         {/* Filters */}
-        <div className="glass-card p-4 md:p-6 mb-8 max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="glass-card p-4 md:p-6 mb-8 max-w-6xl mx-auto relative z-50">
+          <div ref={filterRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -238,32 +163,53 @@ const CollegesSection = () => {
             </div>
 
             {/* Type filter */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted/50 border border-border/50 text-foreground text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-              >
-                {allTypes.map(t => <option key={t} value={t}>{t === "All" ? "All Institutes" : t}</option>)}
-              </select>
-            </div>
+            <CustomDropdown 
+              icon={Filter} 
+              value={typeFilter} 
+              onChange={setTypeFilter} 
+              options={allTypes.map(t => ({ value: t, label: t === "All" ? "All Institutes" : t }))} 
+              isOpen={openDropdown === "type"}
+              onToggle={() => setOpenDropdown(openDropdown === "type" ? null : "type")}
+            />
 
             {/* Branch filter */}
-            <div className="relative">
-              <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <select
-                value={branchFilter}
-                onChange={(e) => setBranchFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-muted/50 border border-border/50 text-foreground text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-              >
-                <option value="All">All Branches</option>
-                {allBranches.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-            </div>
+            <CustomDropdown 
+              icon={GraduationCap} 
+              value={branchFilter} 
+              onChange={setBranchFilter} 
+              options={[
+                { value: "All", label: "All Branches" },
+                ...allBranches.map(b => ({ value: b, label: b }))
+              ]} 
+              isOpen={openDropdown === "branch"}
+              onToggle={() => setOpenDropdown(openDropdown === "branch" ? null : "branch")}
+            />
+
+            {/* Year selector */}
+            <CustomDropdown 
+              icon={Calendar} 
+              value={selectedYear} 
+              onChange={(val) => setSelectedYear(val as typeof years[number])} 
+              options={years.map(y => ({ value: y, label: `JoSAA ${y}` }))} 
+              isOpen={openDropdown === "year"}
+              onToggle={() => setOpenDropdown(openDropdown === "year" ? null : "year")}
+            />
+
+            {/* Round Filter */}
+            <CustomDropdown 
+              icon={TrendingDown} 
+              value={roundFilter} 
+              onChange={handleRoundChange} 
+              options={[
+                { value: "Round 6", label: "JoSAA Round 6" },
+                { value: "CSAB Spot Round", label: "CSAB Spot Round (Premium)" },
+              ]} 
+              isOpen={openDropdown === "round"}
+              onToggle={() => setOpenDropdown(openDropdown === "round" ? null : "round")}
+            />
 
             {/* Category filter */}
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 flex-wrap md:flex-nowrap">
               {categories.map(cat => (
                 <button
                   key={cat}
@@ -278,6 +224,26 @@ const CollegesSection = () => {
                 </button>
               ))}
             </div>
+            
+            {/* PwD filter */}
+            <div className="flex items-center justify-between px-3 py-2 bg-muted/40 rounded-lg border border-border/50 col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-6 mt-1">
+              <span className="text-sm text-foreground font-medium">Are you a Person with Disability (PwD)?</span>
+              <div className="flex gap-1.5 bg-background p-1 rounded-md border border-border/50">
+                {(["No", "Yes"] as const).map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setIsPwD(opt === "Yes")}
+                    className={`px-4 py-1.5 text-xs font-semibold rounded transition-all ${
+                      (isPwD && opt === "Yes") || (!isPwD && opt === "No")
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -286,7 +252,7 @@ const CollegesSection = () => {
           <p className="text-sm text-muted-foreground">
             Showing <span className="text-foreground font-semibold">{filtered.length}</span> colleges
           </p>
-          <p className="text-xs text-muted-foreground">Based on JoSAA 2024 Round 6 data</p>
+          <p className="text-xs text-muted-foreground">Based on JoSAA {selectedYear} data</p>
         </div>
 
         {/* College cards */}
@@ -294,9 +260,10 @@ const CollegesSection = () => {
           <AnimatePresence mode="popLayout">
             {filtered.map((college, idx) => {
               const isExpanded = expandedCollege === college.name;
+              const branches = selectedYear === "2025" ? college.branches2025 : college.branches2024;
               const displayBranches = branchFilter !== "All"
-                ? college.branches.filter(b => b.branch === branchFilter)
-                : college.branches;
+                ? branches.filter(b => b.branch === branchFilter)
+                : branches;
 
               return (
                 <motion.div
@@ -320,14 +287,19 @@ const CollegesSection = () => {
                         <div className="flex items-center gap-2 mt-0.5">
                           <MapPin className="w-3 h-3 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">{college.state}</span>
+                          <span className="text-xs text-muted-foreground/50">•</span>
+                          <span className="text-xs text-muted-foreground">{branches.length} branches</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeColors[college.type]}`}>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-[10px] md:text-xs font-semibold px-2.5 py-1 rounded-full ${typeColors[college.type]}`}>
                         {college.type}
                       </span>
-                      <TrendingDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/40 hover:bg-muted/80 transition-colors">
+                        <span className="text-[10px] text-muted-foreground hidden sm:block">View Branches</span>
+                        <TrendingDown className={`w-4 h-4 text-primary transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                      </div>
                     </div>
                   </div>
 
@@ -342,6 +314,21 @@ const CollegesSection = () => {
                         className="overflow-hidden"
                       >
                         <div className="px-4 md:px-5 pb-4 md:pb-5">
+                          <div className="border-b border-border/50 mb-4 pb-2 px-1 flex items-center gap-6">
+                            <button 
+                              onClick={() => setActiveTab("cutoffs")}
+                              className={`text-sm font-semibold pb-2 border-b-2 transition-all ${activeTab === "cutoffs" ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                            >
+                              Cutoffs Data
+                            </button>
+                            <button 
+                              onClick={() => handleTabChange("placements")}
+                              className={`text-sm font-semibold pb-2 border-b-2 border-transparent text-muted-foreground hover:text-accent transition-all flex items-center gap-1.5`}
+                            >
+                              <Briefcase className="w-3.5 h-3.5" /> Placements & ROI <Lock className="w-3 h-3 opacity-50 ml-1" />
+                            </button>
+                          </div>
+
                           <div className="rounded-lg overflow-hidden border border-border/50">
                             <table className="w-full text-sm">
                               <thead>
@@ -349,6 +336,7 @@ const CollegesSection = () => {
                                   <th className="text-left py-2.5 px-3 text-xs font-semibold text-muted-foreground">Branch</th>
                                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground">Opening Rank</th>
                                   <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground">Closing Rank</th>
+                                  <th className="text-right py-2.5 px-3 text-xs font-semibold text-muted-foreground">Insights</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -363,6 +351,11 @@ const CollegesSection = () => {
                                       <td className="py-2.5 px-3 text-center">
                                         <span className="text-accent font-semibold">#{cutoff.cr.toLocaleString("en-IN")}</span>
                                       </td>
+                                      <td className="py-2.5 px-3 text-right">
+                                        <button onClick={() => setPaymentOpen(true)} className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded transition-colors">
+                                          <LineChart className="w-3 h-3" /> 5-Year Trend
+                                        </button>
+                                      </td>
                                     </tr>
                                   );
                                 })}
@@ -370,7 +363,7 @@ const CollegesSection = () => {
                             </table>
                           </div>
                           <p className="text-[10px] text-muted-foreground mt-2">
-                            {categoryFilter} category • OR = Opening Rank, CR = Closing Rank • Source: JoSAA 2024 (approx.)
+                            {categoryFilter} category • OR = Opening Rank, CR = Closing Rank • Source: JoSAA {selectedYear} (approx.)
                           </p>
                         </div>
                       </motion.div>
