@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   preview: {
-    allowedHosts: ["rankedge.onrender.com", "lively-vacherin-216fcf.netlify.app"],
+    allowedHosts: ["rankedge.onrender.com", "netlify.app"],
   },
   plugins: [react()].filter(Boolean),
   resolve: {
